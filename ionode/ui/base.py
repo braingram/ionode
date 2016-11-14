@@ -9,6 +9,8 @@ from tornado.ioloop import IOLoop
 import pizco
 import wsrpc
 
+from .. import encoders
+
 
 module_folder = os.path.abspath(
     os.path.dirname(inspect.getfile(inspect.currentframe())))
@@ -32,7 +34,7 @@ def build_spec(obj, name):
         'template_folder': template_folder,
         'template': open(
             os.path.join(template_folder, 'base.html'), 'r').read(),
-        # 'encoder': ??
+        'encoder': encoders.default,
     }
     return spec
 

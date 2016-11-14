@@ -8,6 +8,7 @@ import sys
 import datautils
 import numpy
 
+from . import encoders
 from . import log
 
 
@@ -70,14 +71,16 @@ class NumpyAwareParser(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-def save(cfg, fn):
+def save(cfg, fn, encoder=None):
     fn = os.path.expanduser(fn)
     # make directory if it doesn't exist
     d = os.path.dirname(fn)
     if d != '' and not os.path.exists(d):
         os.makedirs(d)
+    if encoder is None:
+        encoder = encoders.default
     with open(fn, 'w') as f:
-        json.dump(cfg, f, cls=NumpyAwareParser)
+        json.dump(cfg, f, cls=encoder)
     logger.info("Saved config to %s: %s", fn, cfg)
 
 
