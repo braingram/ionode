@@ -2,6 +2,29 @@ div.config_items {
 
 }
 
+.signal_toggle {
+    width: 21px;
+    height: 21px;
+}
+
+.signal_toggle img {
+    width: inherit;
+    height: inherit;
+}
+
+.signal_viewer {
+    left: 0%;
+    top: 30px;
+    position: absolute;
+    background-color: white;
+    z-index: 9;
+}
+
+.signal_buttons {
+    left: 0%;
+    position: absolute;
+}
+
 .config_toggle {
     width: 21px;
     height: 21px;

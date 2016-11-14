@@ -102,12 +102,41 @@ var {{ name }} = {};
     $('#{{ name }}_config_container').toggle(500);
 };
 
+
+{{ name }}.toggle_signal = function () {
+    $('#{{ name }}_signal_container').toggle(500);
+};
+
+
 $({{ name }}).on('connect', function () {
     $('#{{ name }}_config_container').hide();
+    $('#{{ name }}_signal_container').hide();
     {{ name }}.config_editor = new jsoneditor.JSONEditor(document.getElementById('{{ name }}_config'), {change: {{ name }}.config_modified});
     {{ name }}.config_editor.modified = false;
     {{ name }}.fetch_config();
     {{ name }}.signal('config_changed.connect', function(r) { {{ name }}.new_config(r[0][0]) });
+    {{ name }}.call('__wsrpc__', [], function (wsrpc_spec) {
+        ns = {};
+        for (fname in wsrpc_spec) {
+            args = wsrpc_spec[fname].slice(1);
+            body = "{ {{ name }}.call('" + fname + "', [" + args + "]); }";
+            ns[fname] = Function(args, body);
+        };
+        {{ name }}.ns = ns;
+    });
+    {{ name }}.call('_proxy_signals', [], function (signals) {
+        container = $('#{{ name }}_signal_container');
+        for (i in signals) {
+            sname = signals[i];
+            if (sname != "config_changed") {
+                ename = "{{ name }}_signal_viewer_" + sname;
+                container.append("<div id='" + ename + "'></div>");
+                {{ name }}.signal(sname + '.connect', function(r) {
+                    $('#' + ename).html(sname + ' = ' + r[0]);
+                });
+            };
+        };
+    });
 });
 
 $(function () {
@@ -127,19 +156,25 @@ $(function () {
 {%- endmacro %}
 
 {% macro body(name) -%}
+<div id="{{ name }}_signal_container" class="signal_viewer">
+    Signals:
+</div>
+<div class="signal_buttons">
+    <a id="{{ name }}_toggle_signal" class="signal_toggle" onclick="{{ name }}.toggle_signal();"><img src="{{ url_for(name + '.static', filename='imgs/gear.png') }}" /></a>
+</div>
 <div class="config_buttons">
-<button id="{{ name }}_connect" onclick="{{ name }}.call('connect');">Connect</button>
-<button id="{{ name }}_disconnect" onclick="{{ name }}.call('disconnect');">Disconnect</button>
-<a id="{{ name }}_toggle_config" class="config_toggle" onclick="{{ name }}.toggle_config();"><img src="{{ url_for(name + '.static', filename='imgs/gear.png') }}" /></a>
+    <button id="{{ name }}_connect" onclick="{{ name }}.call('connect');">Connect</button>
+    <button id="{{ name }}_disconnect" onclick="{{ name }}.call('disconnect');">Disconnect</button>
+    <a id="{{ name }}_toggle_config" class="config_toggle" onclick="{{ name }}.toggle_config();"><img src="{{ url_for(name + '.static', filename='imgs/gear.png') }}" /></a>
 </div>
 <div id="{{ name }}_config_container" class="config_editor">
-<button onclick="{{ name }}.send_config();">Commit</button>
-<button onclick="{{ name }}.fetch_config();">Revert</button>
-<button onclick="{{ name }}.load_config();">Load Config</button>
-<input type="text" id="{{ name }}_load_config"></input>
-<button onclick="{{ name }}.save_config();">Save Config</button>
-<input type="text" id="{{ name }}_save_config"></input>
-<div id="{{ name }}_config" class="jsoneditor" style="width: 635px; height: 400px;"></div>
+    <button onclick="{{ name }}.send_config();">Commit</button>
+    <button onclick="{{ name }}.fetch_config();">Revert</button>
+    <button onclick="{{ name }}.load_config();">Load Config</button>
+    <input type="text" id="{{ name }}_load_config"></input>
+    <button onclick="{{ name }}.save_config();">Save Config</button>
+    <input type="text" id="{{ name }}_save_config"></input>
+    <div id="{{ name }}_config" class="jsoneditor" style="width: 635px; height: 400px;"></div>
 </div>
 {%- endmacro %}
 
