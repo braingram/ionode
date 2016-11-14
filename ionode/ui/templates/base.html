@@ -125,13 +125,17 @@ $({{ name }}).on('connect', function () {
         {{ name }}.ns = ns;
     });
     {{ name }}.call('_proxy_signals', [], function (signals) {
+        //console.log({'signals': signals});
         container = $('#{{ name }}_signal_container');
         for (i in signals) {
             sname = signals[i];
             if (sname != "config_changed") {
                 ename = "{{ name }}_signal_viewer_" + sname;
-                container.append("<div id='" + ename + "'></div>");
+                container.append("<div id='" + ename + "'>" + sname + " =</div>");
+                // TODO default signal display
+                //console.log({ename: sname + '.connect'});
                 {{ name }}.signal(sname + '.connect', function(r) {
+                    // console.log({sname: r});
                     $('#' + ename).html(sname + ' = ' + r[0]);
                 });
             };
