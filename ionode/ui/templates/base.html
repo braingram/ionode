@@ -134,10 +134,14 @@ $({{ name }}).on('connect', function () {
                 container.append("<div id='" + ename + "'>" + sname + " =</div>");
                 // TODO default signal display
                 //console.log({ename: sname + '.connect'});
-                {{ name }}.signal(sname + '.connect', function(r) {
-                    // console.log({sname: r});
-                    $('#' + ename).html(sname + ' = ' + r[0]);
-                });
+                {{ name }}.signal(sname + '.connect', (function() {
+                    var sname = signals[i];
+                    var ename = "{{ name }}_signal_viewer_" + sname;
+                    return function(r) {
+                        // console.log({'signal': [sname, ename, r]});
+                        $('#' + ename).html(sname + ' = ' + r[0]);
+                    };
+                })());
             };
         };
     });
