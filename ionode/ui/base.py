@@ -39,10 +39,23 @@ def build_spec(obj, name):
     return spec
 
 
-def run_proxy_ui(name, addr, klass):
-    p = pizco.Proxy(addr)
+def register_proxy(p, name, klass, spec=None):
     add_wsrpc_to_proxy(p, klass)
+    s = build_spec(p, name)
+    if spec is None:
+        spec = {}
+    s.update(spec)
+    wsrpc.serve.register(s)
+
+
+def run(*args, **kwargs):
+    # TODO necessary?
     if hasattr(IOLoop, '_instance'):
         del IOLoop._instance
-    wsrpc.serve.register(build_spec(p, name))
-    wsrpc.serve.serve()
+    wsrpc.serve.serve(*args, **kwargs)
+
+
+def run_proxy_ui(name, addr, klass):
+    p = pizco.Proxy(addr)
+    register_proxy(p, name, klass)
+    run()
