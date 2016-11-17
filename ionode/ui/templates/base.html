@@ -139,6 +139,7 @@ $({{ name }}).on('connect', function () {
                     var ename = "{{ name }}_signal_viewer_" + sname;
                     return function(r) {
                         // console.log({'signal': [sname, ename, r]});
+                        $({{ name }}).trigger(sname, r);
                         $('#' + ename).html(sname + ' = ' + r[0]);
                     };
                 })());
@@ -164,6 +165,7 @@ $(function () {
 {%- endmacro %}
 
 {% macro body(name) -%}
+<div id="{{ name }}_header" class="header">
 <div id="{{ name }}_signal_container" class="signal_viewer">
     Signals:
 </div>
@@ -184,6 +186,7 @@ $(function () {
     <input type="text" id="{{ name }}_save_config"></input>
     <div id="{{ name }}_config" class="jsoneditor" style="width: 635px; height: 400px;"></div>
 </div>
+</div>
 {%- endmacro %}
 
 <html>
@@ -199,5 +202,5 @@ $(function () {
     <body>
         {{ body(name) }}
     </body>
-</head>
+</html>
 

@@ -1,0 +1,66 @@
+{% import 'base.html' as base with context %}
+
+{% macro head(name) -%}
+<script src="{{url_for(name + '.static', filename='js/d3.js')}}" charset="utf-8"></script>
+<script src="{{url_for(name + '.static', filename='js/c3.js')}}"></script>
+<link rel="stylesheet" type="text/css" href="{{url_for(name + '.static', filename='css/c3.css')}}" />
+{%- endmacro %}
+
+{% macro js(name) -%}
+
+{{ name }}.signal_callback = function (e, i) {
+    datum = i[0];
+    {{ name }}.signal_data.push(datum);
+    if ({{ name }}.signal_data.length > 20) {
+        {{ name }}.signal_data = {{ name }}.signal_data.slice(-20);
+    };
+    // ignore when document is not visible
+    if (document.visibilityState == 'visible') {
+        {{ name }}.signal_plot.load({
+            columns: [['signal'].concat({{ name }}.signal_data)]
+        });
+    };
+};
+
+$(function() {
+    {{ name }}.signal_plot = c3.generate({
+        bindto: '#{{ name + "_signal_plot" }}',
+        data: {columns: [['signal']],},
+        transition: {duration: 100},
+    });
+    {{ name }}.signal_data = [];
+});
+
+$({{ name }}).on('connect', function () {
+    {{ name }}.call('connect'); // auto connect to io device
+    $({{ name }}).on('mysignal2', {{ name }}.signal_callback);
+});
+{%- endmacro %}
+
+{% macro css(name) -%}
+{%- endmacro %}
+
+{% macro body(name) -%}
+<div id="{{ name }}_signal_plot" class="epoch category10" style="width: 400px; height: 200px;"></div>
+{%- endmacro %}
+
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+    <head>
+        {{ base.head(name) }}
+        {{ head(name) }}
+    </head>
+    {% call base.make_js() %}
+        {{ base.js(name) }}
+        {{ js(name) }}
+    {% endcall %}
+    {% call base.make_css() %}
+        {{ base.css(name) }}
+        {{ css(name) }}
+    {% endcall %}
+    <body>
+        {{ base.body(name) }}
+        {{ body(name) }}
+    </body>
+</html>
