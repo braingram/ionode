@@ -17,7 +17,10 @@
     // ignore when document is not visible
     if (document.visibilityState == 'visible') {
         {{ name }}.signal_plot.load({
-            columns: [['signal'].concat({{ name }}.signal_data)]
+            //columns: [['signal'].concat({{ name }}.signal_data)]
+            json: {
+                'signal': {{ name }}.signal_data,
+            }
         });
     };
 };
@@ -41,7 +44,7 @@ $({{ name }}).on('connect', function () {
 {%- endmacro %}
 
 {% macro body(name) -%}
-<div id="{{ name }}_signal_plot" class="epoch category10" style="width: 400px; height: 200px;"></div>
+<div id="{{ name }}_signal_plot" class="epoch category10" style="width: 800px; height: 300px;"></div>
 {%- endmacro %}
 
 <!DOCTYPE html>
