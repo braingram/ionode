@@ -118,7 +118,13 @@ $({{ name }}).on('connect', function () {
     {{ name }}.call('__wsrpc__', [], function (wsrpc_spec) {
         ns = {};
         for (fname in wsrpc_spec) {
-            args = wsrpc_spec[fname].slice(1);
+            argspec = wsrpc_spec[fname];
+            args = argspec.args.slice(1);
+            /*  TODO support for the following
+            defaults = argspec.defaults;
+            varargs = argspec.varargs;
+            keywords = argspec.keywords;
+            */
             body = "{ {{ name }}.call('" + fname + "', [" + args + "]); }";
             ns[fname] = Function(args, body);
         };
