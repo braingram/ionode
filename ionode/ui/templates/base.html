@@ -163,6 +163,15 @@ $(function () {
             {'socketUrl': 'ws://' + window.location.host + '/{{ name }}/ws'});
         $({{ name }}).trigger('connect');
     };
+    $('#{{ name + "_lock_connection" }}').change(function (e) {
+        if ($(this).is(':checked')) {
+            $('#{{ name + "_connect" }}').prop('disabled', 'disabled');
+            $('#{{ name + "_disconnect" }}').prop('disabled', 'disabled');
+        } else {
+            $('#{{ name + "_connect" }}').prop('disabled', null);
+            $('#{{ name + "_disconnect" }}').prop('disabled', null);
+        };
+    });
 });
 
 {%- endmacro %}
@@ -179,6 +188,7 @@ $(function () {
     <a id="{{ name }}_toggle_signal" class="signal_toggle" onclick="{{ name }}.toggle_signal();"><img src="{{ url_for(name + '.static', filename='imgs/signal.png') }}" /></a>
 </div>
 <div class="config_buttons">
+    <input type="checkbox" id="{{ name}}_lock_connection">Lock Connection</input>
     <button id="{{ name }}_connect" onclick="{{ name }}.call('connect');">Connect</button>
     <button id="{{ name }}_disconnect" onclick="{{ name }}.call('disconnect');">Disconnect</button>
     <a id="{{ name }}_toggle_config" class="config_toggle" onclick="{{ name }}.toggle_config();"><img src="{{ url_for(name + '.static', filename='imgs/gear.png') }}" /></a>
