@@ -6,3 +6,4 @@ tornado==4.0.1
 -e git://github.com/braingram/flask_wsrpc.git@master#egg=wsrpc
 -e git://github.com/braingram/datautils.git@master#egg=datautils
 
+PIL
