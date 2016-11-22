@@ -1,0 +1,8 @@
+flask
+pyzmq==14.3.1
+tornado==4.0.1
+
+-e git://github.com/braingram/pizco.git@develop#egg=pizco
+-e git://github.com/braingram/flask_wsrpc.git@master#egg=wsrpc
+-e git://github.com/braingram/datautils.git@master#egg=datautils
+
