@@ -1,0 +1,67 @@
+{% import 'base.html' as base with context %}
+
+{% macro head(name) -%}
+<script src="{{url_for(name + '.static', filename='js/d3.js')}}" charset="utf-8"></script>
+<script src="{{url_for(name + '.static', filename='js/c3.js')}}"></script>
+<link rel="stylesheet" type="text/css" href="{{url_for(name + '.static', filename='css/c3.css')}}" />
+{%- endmacro %}
+
+{% macro js(name) -%}
+
+// blacklist image from signal container
+{{ name }}.signal_container_blacklist.push("new_image");
+
+{{ name }}.image_callback = function (i) {
+    // ignore when document is not visible
+    console.log('new_image');
+    if (document.visibilityState == 'visible') {
+        $("#{{ name}}_image").attr('src', "data:image/jpeg;base64, " + i[0]);
+    };
+};
+
+{{ name }}.start_streaming = function () {
+    {{ name }}.ns.start_streaming();
+};
+
+{{ name }}.stop_streaming = function () {
+    {{ name }}.ns.stop_streaming();
+};
+
+$(function() {
+});
+
+$({{ name }}).on('connect', function () {
+    {{ name }}.call('connect'); // auto connect to io device
+    {{ name }}.signal('new_image.connect', {{ name }}.image_callback);
+});
+{%- endmacro %}
+
+{% macro css(name) -%}
+{%- endmacro %}
+
+{% macro body(name) -%}
+<button onclick="{{ name }}.start_streaming();">Start Streaming</button>
+<button onclick="{{ name }}.stop_streaming();">Stop Streaming</button>
+<img id="{{ name }}_image"></img>
+{%- endmacro %}
+
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+    <head>
+        {{ base.head(name) }}
+        {{ head(name) }}
+    </head>
+    {% call base.make_js() %}
+        {{ base.js(name) }}
+        {{ js(name) }}
+    {% endcall %}
+    {% call base.make_css() %}
+        {{ base.css(name) }}
+        {{ css(name) }}
+    {% endcall %}
+    <body>
+        {{ base.body(name) }}
+        {{ body(name) }}
+    </body>
+</html>
