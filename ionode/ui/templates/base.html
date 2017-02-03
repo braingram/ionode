@@ -27,6 +27,10 @@
 logger.set_level(logger.DEBUG);
 
 var {{ name }} = {};
+// add signal names to this to prevent them from being included in the
+// signal container and also preventing them from being turned into
+// javascript events
+{{ name }}.signal_container_blacklist = ['config_changed'];
 {{ name }}.socket = null;
 {{ name }}.error_callback = function (e) {
     {{ name }}.last_error = e;
@@ -135,7 +139,7 @@ $({{ name }}).on('connect', function () {
         container = $('#{{ name }}_signal_container');
         for (i in signals) {
             sname = signals[i];
-            if (sname != "config_changed") {
+            if ({{ name }}.signal_container_blacklist.indexOf(sname) == -1) {
                 ename = "{{ name }}_signal_viewer_" + sname;
                 container.append("<div id='" + ename + "'>" + sname + " =</div>");
                 // TODO default signal display
