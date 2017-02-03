@@ -36,7 +36,7 @@ class ImageAwareEncoder(NumpyAwareEncoder):
     def default(self, obj):
         if isinstance(obj, PIL.Image.Image):
             io = StringIO()
-            obj.save(io, format='png')
+            obj.save(io, format='jpeg')
             io.seek(0)
             return io.read().encode('base64')
         return super(ImageAwareEncoder, self).default(obj)
