@@ -149,7 +149,9 @@ class PiCameraNode(ionode.base.IONode):
             self.new_image.emit(e)
             t2 = time.time()
             if print_timing:
-                print("Timing:[total %s, dt: %s, fps: %s]" % (t2 - t0, dt, 1. / dt))
+                print(
+                    "Timing:[total %s, dt: %s, fps: %s]"
+                    % (t2 - t0, dt, 1. / dt))
                 print("\tencode   : %s" % (t1 - t0))
                 print("\tbroadcast: %s" % (t2 - t1))
         self.loop.add_callback(self.grab, True)
