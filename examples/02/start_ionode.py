@@ -122,7 +122,7 @@ class PiCameraNode(ionode.base.IONode):
         if f is not None and self.streaming:
             t0 = time.time()
             # base64 encode
-            e = self.buffer.read().encode('base64')
+            e = f.read().encode('base64')
             t1 = time.time()
             self.new_image.emit(e)
             t2 = time.time()
