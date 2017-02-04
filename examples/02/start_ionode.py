@@ -31,18 +31,29 @@ class CaptureThread(threading.Thread):
             s = StringIO.StringIO()
             cam.capture(s, 'jpeg', use_video_port=True)
             s.seek(0)
-            if not self.queue.full():
-                self.queue.put(s)
+            if self.queue.full():
+                self.queue.get()
+            self.queue.put(s)
             if not self.cmds.empty():
                 cmd = self.cmds.get()
-                if cmd[0] == 'get':
-                    n = cmd[1]
-                    r = getattr(self.cam, n)
-                    if n == 'resolution':
-                        r = tuple(r)
-                    self.results.put((n, r))
+                n = cmd[1]
+                r = None
+                if not hasattr(cam, n):
+                    r = Exception("invalid property: %s" % n)
                 else:
-                    r = setattr(self.cam, cmd[1], cmd[2])
+                    if cmd[0] == 'get':
+                        try:
+                            r = getattr(cam, n)
+                            if n in ('resolution', 'framerate'):
+                                r = tuple(r)
+                        except Exception as e:
+                            r = e
+                    else:
+                        try:
+                            setattr(cam, n, cmd[2])
+                        except Exception as e:
+                            r = e
+                self.results.put((n, r))
 
         print("Releasing capture")
         cam.close()
@@ -57,6 +68,9 @@ class CaptureThread(threading.Thread):
 
     def set_property(self, name, value):
         self.cmds.put(('set', name, value))
+        r = self.results.get()
+        if r[1] is not None:
+            raise r[1]
 
     def stop(self):
         print("CaptureThread.stop called")
@@ -81,6 +95,7 @@ class PiCameraNode(ionode.base.IONode):
         self.state = 'disconnected'
         self.streaming = False
         self.cam = None
+        self.last_frame_time = time.time()
 
     def start_streaming(self):
         if self.streaming:
@@ -118,20 +133,26 @@ class PiCameraNode(ionode.base.IONode):
             return
         if not in_callback:
             return self.loop.add_callback(self.grab, True)
+        if not self.streaming:
+            return
         f = self.cam.get_frame(recent=True)
-        if f is not None and self.streaming:
+        dt = time.time() - self.last_frame_time
+        tdt = 1. / self.config()['fps']
+        if dt < tdt:
+            return self.loop.add_callback(self.grab, True)
+        if f is not None:
             t0 = time.time()
+            self.last_frame_time = t0
             # base64 encode
             e = f.read().encode('base64')
             t1 = time.time()
             self.new_image.emit(e)
             t2 = time.time()
             if print_timing:
-                print("Timing:[total %s]" % (t2 - t0))
+                print("Timing:[total %s, dt: %s, fps: %s]" % (t2 - t0, dt, 1. / dt))
                 print("\tencode   : %s" % (t1 - t0))
                 print("\tbroadcast: %s" % (t2 - t1))
-        if self.streaming:
-            self.loop.add_callback(self.grab, True)
+        self.loop.add_callback(self.grab, True)
         return
 
     def set_property(self, name, value):
@@ -151,5 +172,6 @@ if __name__ == '__main__':
         'tcp://%s:%s' % (
             socket.gethostbyname(
                 socket.gethostname() + '.local'), port))
+    cfg['fps'] = 5
     node = PiCameraNode(cfg)
     node.serve_forever()
