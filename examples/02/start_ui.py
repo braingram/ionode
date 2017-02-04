@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
-import json
 import socket
-import webbrowser
 
 import ionode.base
 import ionode.ui.base

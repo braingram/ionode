@@ -8,27 +8,23 @@
 
 {% macro js(name) -%}
 
-{{ name }}.streaming = false;
+// blacklist image from signal container
+{{ name }}.signal_container_blacklist.push("new_image");
 
-{{ name }}.image_callback = function (e, i) {
+{{ name }}.image_callback = function (i) {
     // ignore when document is not visible
     console.log('new_image');
     if (document.visibilityState == 'visible') {
         $("#{{ name}}_image").attr('src', "data:image/jpeg;base64, " + i[0]);
     };
-    if ({{ name }}.streaming) {
-        {{ name }}.ns.grab();
-    };
 };
 
 {{ name }}.start_streaming = function () {
-    if ({{ name }}.streaming) return;
-    {{ name }}.streaming = true;
-    {{ name }}.ns.grab();
+    {{ name }}.ns.start_streaming();
 };
 
 {{ name }}.stop_streaming = function () {
-    {{ name }}.streaming = false;
+    {{ name }}.ns.stop_streaming();
 };
 
 $(function() {
@@ -36,7 +32,7 @@ $(function() {
 
 $({{ name }}).on('connect', function () {
     {{ name }}.call('connect'); // auto connect to io device
-    $({{ name }}).on('new_image', {{ name }}.image_callback);
+    {{ name }}.signal('new_image.connect', {{ name }}.image_callback);
 });
 {%- endmacro %}
 
