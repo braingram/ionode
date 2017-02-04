@@ -7,6 +7,8 @@ import threading
 import time
 
 import picamera
+import picamera.array
+import PIL.Image
 import pizco
 
 import ionode.base
@@ -28,12 +30,16 @@ class CaptureThread(threading.Thread):
     def run(self):
         cam = picamera.PiCamera()
         while not self.stop_event.is_set():
-            s = StringIO.StringIO()
-            cam.capture(s, 'jpeg', use_video_port=True)
-            s.seek(0)
+            # s = StringIO.StringIO()
+            # cam.capture(s, 'jpeg', use_video_port=True)
+            # s.seek(0)
+            # f = s
+            f = picamera.array.PiYUVArray(cam)
+            cam.capture(f, 'yuv', use_video_port=True)
+            f = f.array
             if self.queue.full():
                 self.queue.get()
-            self.queue.put(s)
+            self.queue.put(f)
             if not self.cmds.empty():
                 cmd = self.cmds.get()
                 n = cmd[1]
@@ -141,6 +147,11 @@ class PiCameraNode(ionode.base.IONode):
         if dt < tdt:
             return self.loop.add_callback(self.grab, True)
         if f is not None:
+            s = StringIO.StringIO()
+            PIL.Image.fromarray(
+                f[:, :, 0]).save(s, format='jpeg')
+            s.seek(0)
+            f = s
             t0 = time.time()
             self.last_frame_time = t0
             # base64 encode
