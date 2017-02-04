@@ -17,6 +17,9 @@ port = 21022
 
 print_timing = True
 
+#ctype = 'jpeg'  # capture to jpeg
+ctype = 'yuv'  # capture to yuv (numpy array)
+
 
 class CaptureThread(threading.Thread):
     def __init__(self, capture_id=-1):
@@ -30,13 +33,17 @@ class CaptureThread(threading.Thread):
     def run(self):
         cam = picamera.PiCamera()
         while not self.stop_event.is_set():
-            # s = StringIO.StringIO()
-            # cam.capture(s, 'jpeg', use_video_port=True)
-            # s.seek(0)
-            # f = s
-            f = picamera.array.PiYUVArray(cam)
-            cam.capture(f, 'yuv', use_video_port=True)
-            f = f.array
+            if ctype == 'jpeg':
+                s = StringIO.StringIO()
+                cam.capture(s, 'jpeg', use_video_port=True)
+                s.seek(0)
+                f = s
+            elif ctype == 'yuv':
+                f = picamera.array.PiYUVArray(cam)
+                cam.capture(f, 'yuv', use_video_port=True)
+                f = f.array
+            else:
+                raise ValueError("Unknown ctype: %s" % ctype)
             if self.queue.full():
                 self.queue.get()
             self.queue.put(f)
@@ -147,11 +154,12 @@ class PiCameraNode(ionode.base.IONode):
         if dt < tdt:
             return self.loop.add_callback(self.grab, True)
         if f is not None:
-            s = StringIO.StringIO()
-            PIL.Image.fromarray(
-                f[:, :, 0]).save(s, format='jpeg')
-            s.seek(0)
-            f = s
+            if ctype == 'yuv':
+                s = StringIO.StringIO()
+                PIL.Image.fromarray(
+                    f[:, :, 0]).save(s, format='jpeg')
+                s.seek(0)
+                f = s
             t0 = time.time()
             self.last_frame_time = t0
             # base64 encode
