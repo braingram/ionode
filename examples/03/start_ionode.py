@@ -12,6 +12,7 @@ import pizco
 
 import ionode.base
 
+host = '127.0.0.1'
 port = 21022
 
 print_timing = True
@@ -26,8 +27,15 @@ class CaptureThread(threading.Thread):
 
     def run(self):
         c = cv2.VideoCapture(self.capture_id)
+        t0 = time.time()
+        count = 0
         while not self.stop_event.is_set():
             r, f = c.read()
+            t1 = time.time()
+            if count % 10 == 0:
+                print("FPS: %s" % (1. / (t1 - t0)))
+            t0 = t1
+            count += 1
             if r and not self.queue.full():
                 self.queue.put(f)
         print("Releasing capture")
@@ -125,8 +133,6 @@ class CameraNode(ionode.base.IONode):
 if __name__ == '__main__':
     cfg = {}
     cfg['addr'] = (
-        'tcp://%s:%s' % (
-            socket.gethostbyname(
-                socket.gethostname() + '.local'), port))
+        'tcp://%s:%s' % (host, port))
     node = CameraNode(cfg)
     node.serve_forever()
