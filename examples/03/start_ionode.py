@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import Queue
-import socket
 import StringIO
 import threading
 import time
@@ -36,7 +35,9 @@ class CaptureThread(threading.Thread):
                 print("FPS: %s" % (1. / (t1 - t0)))
             t0 = t1
             count += 1
-            if r and not self.queue.full():
+            if r:
+                if self.queue.full():
+                    self.queue.get()
                 self.queue.put(f)
         print("Releasing capture")
         del c
