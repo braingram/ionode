@@ -18,7 +18,15 @@ port = 21022
 print_timing = True
 
 #ctype = 'jpeg'  # capture to jpeg
-ctype = 'yuv'  # capture to yuv (numpy array)
+#ctype = 'yuv'  # capture to yuv (numpy array)
+ctype = 'rgb'
+
+resolution = (2592, 1944)
+
+if ctype == 'rgb':
+    use_video_port = False
+else:
+    use_video_port = True
 
 
 class CaptureThread(threading.Thread):
@@ -32,21 +40,31 @@ class CaptureThread(threading.Thread):
 
     def run(self):
         cam = picamera.PiCamera()
+        last_frame_time = time.time()
+        if resolution is not None:
+            cam.resolution = resolution
         while not self.stop_event.is_set():
+            t0 = time.time()
             if ctype == 'jpeg':
                 s = StringIO.StringIO()
-                cam.capture(s, 'jpeg', use_video_port=True)
+                cam.capture(s, 'jpeg', use_video_port=use_video_port)
                 s.seek(0)
                 f = s
             elif ctype == 'yuv':
                 f = picamera.array.PiYUVArray(cam)
-                cam.capture(f, 'yuv', use_video_port=True)
+                cam.capture(f, 'yuv', use_video_port=use_video_port)
+                f = f.array
+            elif ctype == 'rgb':
+                f = picamera.array.PiRGBArray(cam)
+                cam.capture(f, 'rgb', use_video_port=use_video_port)
                 f = f.array
             else:
                 raise ValueError("Unknown ctype: %s" % ctype)
+            t1 = time.time()
             if self.queue.full():
                 self.queue.get()
             self.queue.put(f)
+            t2 = time.time()
             if not self.cmds.empty():
                 cmd = self.cmds.get()
                 n = cmd[1]
@@ -67,6 +85,14 @@ class CaptureThread(threading.Thread):
                         except Exception as e:
                             r = e
                 self.results.put((n, r))
+            t3 = time.time()
+            if print_timing:
+                print("capture: %0.4f" % (t1 - t0))
+                print("queue  : %0.4f" % (t2 - t1))
+                print("cmds   : %0.4f" % (t3 - t2))
+                fps = 1. / (t2 - last_frame_time)
+                print("fps    : %0.2f" % fps)
+                last_frame_time = t2
 
         print("Releasing capture")
         cam.close()
@@ -158,6 +184,11 @@ class PiCameraNode(ionode.base.IONode):
                 s = StringIO.StringIO()
                 PIL.Image.fromarray(
                     f[:, :, 0]).save(s, format='jpeg')
+                s.seek(0)
+                f = s
+            elif ctype == 'rgb':
+                s = StringIO.StringIO()
+                PIL.Image.fromarray(f).save(s, format='jpeg')
                 s.seek(0)
                 f = s
             t0 = time.time()
