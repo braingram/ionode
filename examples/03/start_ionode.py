@@ -6,7 +6,6 @@ import threading
 import time
 
 import cv2
-import PIL.Image
 import pizco
 
 import ionode.base
@@ -65,7 +64,6 @@ class CameraNode(ionode.base.IONode):
         self.state = 'disconnected'
         self.streaming = False
         self.cam = None
-        self.buffer = StringIO.StringIO()
 
     def start_streaming(self):
         if self.streaming:
@@ -105,28 +103,19 @@ class CameraNode(ionode.base.IONode):
             return self.loop.add_callback(self.grab, True)
         f = self.cam.get_frame(recent=True)
         if f is not None and self.streaming:
-            t0 = time.time()
             # convert to string
-            self.buffer.seek(0)
+            t0 = time.time()
+            _, b = cv2.imencode(".jpg", f)
             t1 = time.time()
-            PIL.Image.fromarray(
-                f[:, :, ::-1]).save(self.buffer, format='jpeg')
+            e = b.tostring().encode('base64')
             t2 = time.time()
-            n = self.buffer.pos
-            self.buffer.seek(0)
-            t3 = time.time()
-            # base64 encode
-            e = self.buffer.read(n).encode('base64')
-            t4 = time.time()
             self.new_image.emit(e)
-            t5 = time.time()
+            t3 = time.time()
             if print_timing:
-                print("Timing:[total %s]" % (t5 - t0))
-                print("\tseek1    : %s" % (t1 - t0))
-                print("\tpil      : %s" % (t2 - t1))
-                print("\tseek2    : %s" % (t3 - t2))
-                print("\tencode   : %s" % (t4 - t3))
-                print("\tbroadcast: %s" % (t5 - t4))
+                print("Timing:[total %s]" % (t3 - t0))
+                print("\tjpeg   : %s" % (t1 - t0))
+                print("\tbase64 : %s" % (t2 - t1))
+                print("\temit   : %s" % (t3 - t2))
         if self.streaming:
             self.loop.add_callback(self.grab, True)
         return
