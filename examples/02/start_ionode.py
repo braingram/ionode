@@ -11,6 +11,12 @@ import picamera.array
 import PIL.Image
 import pizco
 
+try:
+    import cv2
+    has_cv2 = True
+except ImportError:
+    has_cv2 = False
+
 import ionode.base
 
 port = 21022
@@ -20,6 +26,12 @@ print_timing = True
 #ctype = 'jpeg'  # capture to jpeg
 #ctype = 'yuv'  # capture to yuv (numpy array)
 ctype = 'rgb'
+
+etype = 'pil'
+#etype = 'cv2'
+
+if etype == 'cv2' and not has_cv2:
+    raise ImportError("cv2 import failed")
 
 resolution = (2592, 1944)
 
@@ -180,21 +192,27 @@ class PiCameraNode(ionode.base.IONode):
         if dt < tdt:
             return self.loop.add_callback(self.grab, True)
         if f is not None:
-            if ctype == 'yuv':
+            if ctype == 'yuv' and etype == 'pil':
                 s = StringIO.StringIO()
                 PIL.Image.fromarray(
                     f[:, :, 0]).save(s, format='jpeg')
                 s.seek(0)
-                f = s
-            elif ctype == 'rgb':
+                f = s.read()
+            elif ctype == 'rgb' and etype == 'pil':
                 s = StringIO.StringIO()
                 PIL.Image.fromarray(f).save(s, format='jpeg')
                 s.seek(0)
-                f = s
+                f = s.read()
+            elif ctype == 'yuv' and etype == 'cv2':
+                _, b = cv2.imencode('.jpg', f[:, :, 0])
+                f = b.tostring()
+            elif ctype == 'rgb' and etype == 'cv2':
+                _, b = cv2.imencode('.jpg', f)
+                f = b.tostring()
             t0 = time.time()
             self.last_frame_time = t0
             # base64 encode
-            e = f.read().encode('base64')
+            e = f.encode('base64')
             t1 = time.time()
             self.new_image.emit(e)
             t2 = time.time()
