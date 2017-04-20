@@ -4,6 +4,18 @@
 <script src="{{url_for(name + '.static', filename='js/d3.js')}}" charset="utf-8"></script>
 <script src="{{url_for(name + '.static', filename='js/c3.js')}}"></script>
 <link rel="stylesheet" type="text/css" href="{{url_for(name + '.static', filename='css/c3.css')}}" />
+<style>
+
+img {
+    position: absolute;
+    z-index: 1;
+}
+
+canvas {
+    z-index: 20;
+    position: relative;
+}
+</style>
 {%- endmacro %}
 
 {% macro js(name) -%}
@@ -16,6 +28,19 @@
     console.log('new_image');
     if (document.visibilityState == 'visible') {
         $("#{{ name}}_image").attr('src', "data:image/jpeg;base64, " + i[0]);
+        // draw over image
+        img = document.getElementById("{{ name }}_image");
+        // set overlay width, height, x, y
+        {{ name }}.overlay.width = img.width;
+        {{ name }}.overlay.height = img.height;
+        ctx = {{ name }}.overlay.getContext('2d');
+        ctx.beginPath();
+        ctx.moveTo({{ name }}.lx, 0);
+        ctx.lineTo({{ name }}.lx, img.height);
+        ctx.moveTo({{ name }}.rx, 0);
+        ctx.lineTo({{ name }}.rx, img.height);
+        ctx.strokeStyle = 'red';
+        ctx.stroke();
     };
 };
 
@@ -28,6 +53,9 @@
 };
 
 $(function() {
+    {{ name }}.lx = 50;
+    {{ name }}.rx = 75;
+    {{ name }}.overlay = document.getElementById("{{ name }}_image_overlay");
 });
 
 $({{ name }}).on('connect', function () {
@@ -42,7 +70,10 @@ $({{ name }}).on('connect', function () {
 {% macro body(name) -%}
 <button onclick="{{ name }}.start_streaming();">Start Streaming</button>
 <button onclick="{{ name }}.stop_streaming();">Stop Streaming</button>
-<img id="{{ name }}_image"></img>
+<div id="image_container">
+    <img id="{{ name }}_image"></img>
+    <canvas id="{{ name }}_image_overlay"></canvas>
+</div>
 {%- endmacro %}
 
 <!DOCTYPE html>
